@@ -41,38 +41,38 @@
             const card = document.createElement('div');
             card.className = 'card mb-3 p-3 position-relative';
             card.innerHTML = `
-                <button type="button" class="btn btn-outline-danger btn-sm position-absolute top-0 end-0 m-2"
-                        onclick="removeQuestion('${questionId}', this)">
-                    <i class="fas fa-trash"></i>
-                </button>
-                <div class="mb-2">
-                    <label class="form-label">Pertanyaan</label>
-                    <input type="text" name="questions[${questionIndex}][text]" class="form-control"
-                           oninput="updatePreview('${questionId}')" data-preview-id="${questionId}-label" required>
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Tipe Jawaban</label>
-                    <select name="questions[${questionIndex}][type]" class="form-select"
-                            onchange="toggleOptions('${questionId}'); updatePreview('${questionId}', true)"
-                            data-preview-id="${questionId}-input" required>
-                        <option value="text">Text</option>
-                        <option value="textarea">Textarea</option>
-                        <option value="radio">Radio</option>
-                        <option value="checkbox">Checkbox</option>
-                        <option value="select">Select</option>
-                    </select>
-                </div>
-                <div class="mb-2" id="options-${questionId}" style="display: none;">
-                    <label class="form-label">Opsi (pisahkan dengan koma)</label>
-                    <input type="text" name="questions[${questionIndex}][options]" class="form-control"
-                           oninput="updatePreview('${questionId}')" data-preview-id="${questionId}-options">
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="questions[${questionIndex}][required]" value="1"
-                           onchange="updatePreview('${questionId}')" id="required-${questionId}">
-                    <label class="form-check-label">Wajib Diisi</label>
-                </div>
-            `;
+        <button type="button" class="btn btn-outline-danger btn-sm position-absolute top-0 end-0 m-2"
+                onclick="removeQuestion('${questionId}', this)">
+            <i class="fas fa-trash"></i>
+        </button>
+        <div class="mb-2">
+            <label class="form-label">Pertanyaan</label>
+            <input type="text" name="questions[${questionIndex}][text]" class="form-control"
+                   oninput="updatePreview('${questionId}')" data-preview-id="${questionId}-label" required>
+        </div>
+        <div class="mb-2">
+            <label class="form-label">Tipe Jawaban</label>
+            <select name="questions[${questionIndex}][type]" class="form-select"
+                    onchange="toggleOptions('${questionId}'); updatePreview('${questionId}', true)"
+                    data-preview-id="${questionId}-input" required>
+                <option value="text">Text</option>
+                <option value="textarea">Textarea</option>
+                <option value="checkbox">Checkbox</option>
+                <option value="select">Select</option>
+                <option value="file">File Upload</option>
+            </select>
+        </div>
+        <div class="mb-2" id="options-${questionId}" style="display: none;">
+            <label class="form-label">Opsi (pisahkan dengan koma)</label>
+            <input type="text" name="questions[${questionIndex}][options]" class="form-control"
+                   oninput="updatePreview('${questionId}')" data-preview-id="${questionId}-options">
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="questions[${questionIndex}][required]" value="1"
+                   onchange="updatePreview('${questionId}')" id="required-${questionId}">
+            <label class="form-check-label">Wajib Diisi</label>
+        </div>
+    `;
 
             builderContainer.appendChild(card);
             createPreview(questionId);
@@ -83,7 +83,15 @@
         function toggleOptions(qid) {
             const type = document.querySelector(`[data-preview-id="${qid}-input"]`).value;
             const optionsDiv = document.getElementById(`options-${qid}`);
-            optionsDiv.style.display = ['radio', 'checkbox', 'select'].includes(type) ? 'block' : 'none';
+            if (type === 'file') {
+                optionsDiv.style.display = 'block';
+                optionsDiv.querySelector('label').textContent = 'Tipe File yang diperbolehkan (pisahkan dengan koma)';
+                optionsDiv.querySelector('input').placeholder = 'Contoh: png, jpg, jpeg, gif, pdf, doc, docx';
+            } else if (type === 'text' || type === 'textarea') {} else {
+                optionsDiv.style.display = ['checkbox', 'select'].includes(type) ? 'block' : 'none';
+                optionsDiv.querySelector('label').textContent = 'Opsi (pisahkan dengan koma)';
+                optionsDiv.querySelector('input').placeholder = '';
+            }
         }
 
         function createPreview(qid) {
@@ -118,36 +126,35 @@
                 case 'textarea':
                     inputField = `<textarea class="form-control" name="answers[${qid}]" placeholder="Jawaban Anda" ${isRequired ? 'required' : ''}></textarea>`;
                     break;
-                case 'radio':
-                    inputField = options.map((opt, i) => `
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="answers[${qid}]" id="${qid}-radio-${i}" value="${opt}" ${isRequired ? 'required' : ''}>
-                            <label class="form-check-label" for="${qid}-radio-${i}">${opt}</label>
-                        </div>
-                    `).join('');
-                    break;
                 case 'checkbox':
                     inputField = options.map((opt, i) => `
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="answers[${qid}][]" id="${qid}-check-${i}" value="${opt}" ${isRequired ? 'required' : ''}>
-                            <label class="form-check-label" for="${qid}-check-${i}">${opt}</label>
-                        </div>
-                    `).join('');
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="answers[${qid}][]" id="${qid}-check-${i}" value="${opt}" ${isRequired ? 'required' : ''}>
+                    <label class="form-check-label" for="${qid}-check-${i}">${opt}</label>
+                </div>
+            `).join('');
                     break;
                 case 'select':
                     inputField = `
-                        <select class="form-select" name="answers[${qid}]" ${isRequired ? 'required' : ''}>
-                            ${options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
-                        </select>
-                    `;
+                <select class="form-select" name="answers[${qid}]" ${isRequired ? 'required' : ''}>
+                    ${options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                </select>
+            `;
+                    break;
+                case 'file':
+                    inputField = `
+                <input type="file" class="form-control" name="answers[${qid}]" ${isRequired ? 'required' : ''}>
+                <small>Tipe file yang diperbolehkan: png, jpg, jpeg, gif, pdf, doc, docx</small>
+            `;
                     break;
             }
 
             previewField.innerHTML = `
-                <label class="form-label">${label}${isRequired ? ' *' : ''}</label>
-                ${inputField}
-            `;
+        <label class="form-label">${label}${isRequired ? ' *' : ''}</label>
+        ${inputField}
+    `;
         }
+
 
         function removeQuestion(qid, btn) {
             const card = btn.closest('.card');

@@ -1,13 +1,12 @@
 <?php
 
 include 'config/database.php';
+include 'helpers/common_helper.php';
 
 // Ambil nama form dari input
 $form_name = $_POST['form_name'];
 $form_name = $conn->real_escape_string($form_name);
-$form_slug = strtolower(str_replace(' ', '-', $form_name)); // Mengubah nama form menjadi slug
-$form_slug = preg_replace('/[^a-z0-9-]+/', '-', $form_slug); // Menghapus karakter yang tidak valid
-$form_slug = trim($form_slug, '-'); // Menghapus karakter '-' di awal dan akhir
+$form_slug = create_slug($form_name);
 
 // Simpan form_name ke tabel forms
 $sql = "INSERT INTO forms (title, slug) VALUES ('$form_name', '$form_slug')";
@@ -20,11 +19,19 @@ if ($conn->query($sql) === TRUE) {
         foreach ($_POST['questions'] as $question) {
             $text = $conn->real_escape_string($question['text']);
             $type = $conn->real_escape_string($question['type']);
-            $question_options = isset($question['options']) ? $conn->real_escape_string($question['options']) : '';
+
+            if ($type == 'file') {
+                $allowed_types = isset($question['options']) ? $conn->real_escape_string($question['options']) : '';
+                $question_options = '';
+            } else {
+                $allowed_types = '';
+                $question_options = isset($question['options']) ? $conn->real_escape_string($question['options']) : '';
+            }
+
             $question_required = isset($question['required']) ? 1 : 0;
 
-            $sql = "INSERT INTO questions (`form_id`, `text`, `type`, `options`, `is_required`)
-                    VALUES ('$form_id', '$text', '$type', '$question_options', '$question_required')";
+            $sql = "INSERT INTO questions (`form_id`, `text`, `type`, `options`, `allowed_types`, `is_required`)
+                    VALUES ('$form_id', '$text', '$type', '$question_options', '$allowed_types', '$question_required')";
 
             $conn->query($sql);
         }

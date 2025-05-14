@@ -8,8 +8,17 @@ if (empty($_GET['slug'])) {
 
 $slug = $_GET['slug'];
 
-$form = $conn->query("SELECT * FROM forms WHERE slug = '$slug'")->fetch_assoc();
-$questions = $conn->query("SELECT * FROM questions WHERE form_id = '$form[id]'")->fetch_all(MYSQLI_ASSOC);
+$stmt = $conn->prepare("SELECT * FROM forms WHERE slug = ?");
+$stmt->bind_param("s", $slug);
+$stmt->execute();
+$form = $stmt->get_result()->fetch_assoc();
+$stmt->close();
+
+$stmt = $conn->prepare("SELECT * FROM questions WHERE form_id = ? AND deleted_at IS NULL");
+$stmt->bind_param("i", $form['id']);
+$stmt->execute();
+$questions = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -50,18 +59,27 @@ $questions = $conn->query("SELECT * FROM questions WHERE form_id = '$form[id]'")
 
                                 <label>Tipe Jawaban</label>
                                 <select name="questions[<?= $index ?>][type]" class="form-select" onchange="toggleOptions(this, <?= $index ?>)">
-                                    <?php foreach (['text', 'textarea', 'radio', 'checkbox', 'select'] as $type): ?>
+                                    <?php foreach (['text', 'textarea', 'checkbox', 'select', 'file'] as $type): ?>
                                         <option value="<?= $type ?>" <?= $q['type'] == $type ? 'selected' : '' ?>><?= ucfirst($type) ?></option>
                                     <?php endforeach ?>
                                 </select>
 
-                                <div class="options" id="options-<?= $index ?>" style="<?= in_array($q['type'], ['radio', 'checkbox', 'select']) ? '' : 'display:none' ?>">
-                                    <label>Opsi (pisahkan dengan koma)</label>
-                                    <input type="text" name="questions[<?= $index ?>][options]" class="form-control" value="<?= htmlspecialchars($q['options']) ?>">
+                                <div class="options" id="options-<?= $index ?>" style="<?= in_array($q['type'], ['checkbox', 'select', 'file']) ? '' : 'display:none' ?>">
+                                    <?php
+                                    if ($q['type'] == 'file') {
+                                    ?>
+                                        <label>Tipe File yang diperbolehkan (pisahkan dengan koma)</label>
+                                        <input type="text" name="questions[<?= $index ?>][options]" class="form-control" value="<?= htmlspecialchars($q['allowed_types']) ?>" placeholder="Contoh: png, jpg, jpeg, gif, pdf, doc, docx">
+                                    <?php
+                                    } else {
+                                    ?>
+                                        <label>Opsi (pisahkan dengan koma)</label>
+                                        <input type="text" name="questions[<?= $index ?>][options]" class="form-control" value="<?= htmlspecialchars($q['options']) ?>">
+                                    <?php } ?>
                                 </div>
 
                                 <div class="form-check mt-2">
-                                    <input type="checkbox" class="form-check-input" name="questions[<?= $index ?>][is_required]" value="1" <?= $q['is_required'] ? 'checked' : '' ?>>
+                                    <input type="checkbox" class="form-check-input" name="questions[<?= $index ?>][required]" value="1" <?= $q['is_required'] ? 'checked' : '' ?>>
                                     <label class="form-check-label">Wajib Diisi</label>
                                 </div>
 
@@ -81,9 +99,17 @@ $questions = $conn->query("SELECT * FROM questions WHERE form_id = '$form[id]'")
                 let questionIndex = <?= count($questions) ?>;
 
                 function toggleOptions(select, index) {
-                    const val = select.value;
-                    const show = ['radio', 'checkbox', 'select'].includes(val);
-                    document.getElementById('options-' + index).style.display = show ? '' : 'none';
+                    const type = select.value;
+                    const optionsDiv = document.getElementById(`options-${index}`);
+                    if (type === 'file') {
+                        optionsDiv.style.display = 'block';
+                        optionsDiv.querySelector('label').textContent = 'Tipe File yang diperbolehkan (pisahkan dengan koma)';
+                        optionsDiv.querySelector('input').placeholder = 'Contoh: png, jpg, jpeg, gif, pdf, doc, docx';
+                    } else if (type === 'text' || type === 'textarea') {} else {
+                        optionsDiv.style.display = ['checkbox', 'select'].includes(type) ? 'block' : 'none';
+                        optionsDiv.querySelector('label').textContent = 'Opsi (pisahkan dengan koma)';
+                        optionsDiv.querySelector('input').placeholder = '';
+                    }
                     generatePreview();
                 }
 
@@ -94,8 +120,11 @@ $questions = $conn->query("SELECT * FROM questions WHERE form_id = '$form[id]'")
 
                 function addQuestion() {
                     const index = questionIndex++;
-                    const html = `
-    <div class="question-item card p-3 mb-3" data-index="${index}">
+                    const html = `<div class="question-item card p-3 mb-3 position-relative" data-index="${index}">
+                                <button type="button" class="btn btn-outline-danger btn-sm position-absolute top-0 end-0 m-2"
+                                    onclick="removeQuestion(this)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
         <label>Pertanyaan</label>
         <input type="text" name="questions[${index}][text]" class="form-control" required oninput="generatePreview()">
 
@@ -103,9 +132,9 @@ $questions = $conn->query("SELECT * FROM questions WHERE form_id = '$form[id]'")
         <select name="questions[${index}][type]" class="form-select" onchange="toggleOptions(this, ${index})">
             <option value="text">Text</option>
             <option value="textarea">Textarea</option>
-            <option value="radio">Radio</option>
             <option value="checkbox">Checkbox</option>
             <option value="select">Select</option>
+            <option value="file">File</option>
         </select>
 
         <div class="options mt-2" id="options-${index}" style="display:none">
@@ -118,7 +147,7 @@ $questions = $conn->query("SELECT * FROM questions WHERE form_id = '$form[id]'")
             <label class="form-check-label">Wajib Diisi</label>
         </div>
 
-        <button type="button" class="btn btn-danger mt-2" onclick="removeQuestion(this)">Hapus Pertanyaan</button>
+        
     </div>`;
                     document.getElementById('questionList').insertAdjacentHTML('beforeend', html);
                     generatePreview();
@@ -137,15 +166,12 @@ $questions = $conn->query("SELECT * FROM questions WHERE form_id = '$form[id]'")
                             inputHtml = `<input type="text" class="form-control">`;
                         } else if (type === 'textarea') {
                             inputHtml = `<textarea class="form-control"></textarea>`;
-                        } else if (['radio', 'checkbox'].includes(type)) {
-                            options.split(',').forEach(opt => {
-                                const clean = opt.trim();
-                                if (clean) inputHtml += `<div class="form-check"><input type="${type}" class="form-check-input"> <label class="form-check-label">${clean}</label></div>`;
-                            });
                         } else if (type === 'select') {
                             inputHtml = `<select class="form-select">` +
                                 options.split(',').map(opt => `<option>${opt.trim()}</option>`).join('') +
                                 `</select>`;
+                        } else if (type === 'file') {
+                            inputHtml = `<input type="file" class="form-control">`;
                         }
 
                         container.innerHTML += `<div class="mb-3"><label>${text}</label>${inputHtml}</div>`;
