@@ -9,7 +9,11 @@ $slug = $_GET['slug'];
 
 // Ambil semua pertanyaan beserta type-nya
 $questions = [];
-$stmt = $conn->prepare("SELECT questions.id, text, type FROM questions JOIN forms ON forms.id = questions.form_id WHERE slug = ? ORDER BY questions.id");
+$stmt = $conn->prepare("SELECT questions.id, text, type 
+                        FROM questions 
+                        JOIN forms ON forms.id = questions.form_id 
+                        WHERE slug = ? AND questions.deleted_at IS NULL 
+                        ORDER BY questions.id");
 $stmt->bind_param("s", $slug);
 $stmt->execute();
 $res = $stmt->get_result();
