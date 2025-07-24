@@ -51,6 +51,12 @@ $questions = $result_questions->fetch_all(MYSQLI_ASSOC);
                         case 'text':
                             echo "<input type='text' class='form-control' name='$name' $required>";
                             break;
+                        case 'date':
+                            echo "<input type='date' class='form-control' name='$name' $required>";
+                            break;
+                        case 'number':
+                            echo "<input type='number' class='form-control' name='$name' $required>";
+                            break;
                         case 'file':
                             echo "<input type='file' class='form-control' name='$name' $required>";
                             break;

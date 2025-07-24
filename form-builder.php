@@ -56,6 +56,8 @@
                     onchange="toggleOptions('${questionId}'); updatePreview('${questionId}', true)"
                     data-preview-id="${questionId}-input" required>
                 <option value="text">Text</option>
+                <option value="date">Date</option>
+                <option value="number">Number</option>
                 <option value="textarea">Textarea</option>
                 <option value="checkbox">Checkbox</option>
                 <option value="select">Select</option>
@@ -122,6 +124,12 @@
             switch (type) {
                 case 'text':
                     inputField = `<input type="text" class="form-control" name="answers[${qid}]" placeholder="Jawaban Anda" ${isRequired ? 'required' : ''}>`;
+                    break;
+                case 'number':
+                    inputField = `<input type="number" class="form-control" name="answers[${qid}]" placeholder="Jawaban Anda" ${isRequired ? 'required' : ''}>`;
+                    break;
+                case 'date':
+                    inputField = `<input type="date" class="form-control" name="answers[${qid}]" ${isRequired ? 'required' : ''}>`;
                     break;
                 case 'textarea':
                     inputField = `<textarea class="form-control" name="answers[${qid}]" placeholder="Jawaban Anda" ${isRequired ? 'required' : ''}></textarea>`;
