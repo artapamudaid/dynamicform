@@ -32,7 +32,7 @@ CREATE TABLE
     KEY `question_id` (`question_id`),
     CONSTRAINT `answers_ibfk_1` FOREIGN KEY (`form_id`) REFERENCES `forms` (`id`),
     CONSTRAINT `answers_ibfk_2` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`) ON DELETE CASCADE
-  ) ENGINE = InnoDB AUTO_INCREMENT = 4 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+  ) ENGINE = InnoDB AUTO_INCREMENT = 4 ;
 
 -- Data exporting was unselected.
 -- Dumping structure for table dynamicform.forms
@@ -46,7 +46,7 @@ CREATE TABLE
     `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `deleted_at` timestamp NULL DEFAULT NULL,
     PRIMARY KEY (`id`)
-  ) ENGINE = InnoDB AUTO_INCREMENT = 2 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+  ) ENGINE = InnoDB AUTO_INCREMENT = 2 ;
 
 -- Data exporting was unselected.
 -- Dumping structure for table dynamicform.questions
@@ -54,21 +54,18 @@ CREATE TABLE
   IF NOT EXISTS `questions` (
     `id` int NOT NULL AUTO_INCREMENT,
     `form_id` int DEFAULT NULL,
-    `text` varchar(2000) CHARACTER
-    SET
-      utf8mb4 COLLATE utf8mb4_0900_ai_ci,
-      `type` varchar(50) CHARACTER
-    SET
-      utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL,
+    `text` varchar(2000),
+      `type` varchar(50) DEFAULT NULL,
       `options` varchar(2000),
       `allowed_types` varchar(2000) DEFAULT NULL,
       `is_required` tinyint (1) DEFAULT NULL,
       `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
       `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       `deleted_at` timestamp NULL DEFAULT NULL,
+      PRIMARY KEY (id),
       KEY `form_id` (`form_id`),
       CONSTRAINT `questions_ibfk_1` FOREIGN KEY (`form_id`) REFERENCES `forms` (`id`) ON DELETE CASCADE
-  ) ENGINE = InnoDB AUTO_INCREMENT = 4 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci;
+  ) ENGINE = InnoDB AUTO_INCREMENT = 4 ;
 
 -- Data exporting was unselected.
 /*!40103 SET TIME_ZONE=IFNULL(@OLD_TIME_ZONE, 'system') */;
