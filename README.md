@@ -1,7 +1,7 @@
-CREATE config/database.php
+### CREATE config/database.php
 
 copy & paste below in dataase.php
-
+```
 <?php
 
 $host = 'YOUR HOST';
